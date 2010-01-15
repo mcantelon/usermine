@@ -1,0 +1,30 @@
+About
+-----
+
+usermine.py analyzes a user, returning a summary of what they've commented
+on and URLs contained in their comments.
+
+It works by:
+
+1) Downloading the user's comment history from one or more services
+2) Going through the comments and submitting them to the Calais web service
+3) Summarizing the semantic data returned by Calais
+
+Results are stored in a database file.
+
+Installation
+------------
+
+The script requires python-calais, which can be found at:
+
+  http://code.google.com/p/python-calais
+
+Example
+-------
+
+usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx
+
+Legal
+-----
+
+By Mike Cantelon, licensed under GPL
