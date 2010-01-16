@@ -14,8 +14,6 @@ change logic:
 
 document usage in readme
 
-add options to toggle services (Reddit, Twitter)
-
 add option to output as human readable
 
 add extraction of URLs
@@ -135,7 +133,7 @@ def create_semantic_data_tables(db_cursor):
 	db_cursor.execute('CREATE TABLE topics (id INTEGER PRIMARY KEY, topic TEXT)')
 	db_cursor.execute('CREATE TABLE entities (id INTEGER PRIMARY KEY, entity TEXT)')
 
-def populate_database_with_semantic_data_from_comments(calais_api_key, db_cursor):
+def populate_database_with_semantic_data_from_comments(calais_api_key, db_cursor, debug):
 
 	calais = Calais(calais_api_key, submitter='usermine')
 
@@ -157,11 +155,41 @@ def populate_database_with_semantic_data_from_comments(calais_api_key, db_cursor
 				for topic in result.topics:
 					topic_name = topic['categoryName']
 					db_cursor.execute('INSERT INTO topics VALUES (NULL, ?)', [topic_name])
+		except:
+			if debug:
+				print sys.exc_info()
 
+		if debug:
 			print '.'
 
-		except:
-			print sys.exc_info()[0]
+def summarize_data(db_cursor):
+
+	entity_count = {}
+	url_count = {}
+
+	db_cursor.execute("SELECT entity FROM entities")
+
+	for entity_data in db_cursor.fetchall():
+
+		entity_name = entity_data[0]
+
+		if entity_name.find('http://') == 0:
+
+			if url_count.has_key(entity_name):
+				url_count[entity_name] = url_count[entity_name] + 1
+			else:
+				url_count[entity_name] = 1
+		else:
+			if entity_count.has_key(entity_name):
+				entity_count[entity_name] = entity_count[entity_name] + 1
+			else:
+				entity_count[entity_name] = 1
+
+	summary = {}
+	summary['entities'] = sorted(entity_count.iteritems(), key=itemgetter(1), reverse=True)
+	summary['urls'] = sorted(url_count.iteritems(), key=itemgetter(1), reverse=True)
+
+	return summary
 
 def main():
 
@@ -190,30 +218,12 @@ def main():
 				populate_database_with_tweets(username, cursor, debug)
 
 			create_semantic_data_tables(cursor)
-			populate_database_with_semantic_data_from_comments(calais_api_key, cursor)
+			populate_database_with_semantic_data_from_comments(calais_api_key, cursor, debug)
 
 			connection.commit()
 
-		# Summarize data
-		#
-		entity_count = {}
-
-		cursor.execute("SELECT entity FROM entities")
-
-		for entity_data in cursor.fetchall():
-
-			entity_name = entity_data[0]
-
-			try:
-				entity_count[entity_name] = entity_count[entity_name] + 1
-
-			except KeyError:
-				entity_count[entity_name] = 1
-
-		summary = {}
-		summary['entities'] = sorted(entity_count.iteritems(), key=itemgetter(1), reverse=True)
-
-		print simplejson.dumps(summary)
+		# summarize data
+		print simplejson.dumps(summarize_data(cursor))
 		#for entity_data in  sorted(entity_count.iteritems(), key=itemgetter(1), reverse=True):
 		#  entity_name = entity_data[0]
 		#  print entity_name + ':' + str(entity_count[entity_name])
