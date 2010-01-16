@@ -37,7 +37,7 @@ def get_command_line_arguments():
 	parser.add_option('-a', '--api_key', action='store', type='string', dest='api_key',
 	  help='specify OpenCalais API key')
 
-	parser.add_option('-d', action='store_true', dest='debug',
+	parser.add_option('-d', action='store_true', dest='debug', default=False,
 	  help='display debug information during processing')
 
 	parser.add_option('-r', action='store_true', dest='reddit', default=False,
@@ -60,7 +60,7 @@ def get_command_line_arguments():
 	services['reddit'] =  options.reddit
 	services['twitter'] = options.twitter
 
-	return options.user, options.api_key, services
+	return options.user, options.api_key, services, options.debug
 
 def command_line_error_then_die(parser, error_message):
 	print 'ERROR: ' + error_message
@@ -68,9 +68,10 @@ def command_line_error_then_die(parser, error_message):
 	parser.print_help()
 	sys.exit()
 
-def populate_database_with_reddit_comments(username, db_cursor):
+def populate_database_with_reddit_comments(username, db_cursor, debug):
 
-	print 'Getting comment data...'
+	if debug:
+		print 'Getting comment data...'
 
 	after = ''
 
@@ -81,7 +82,8 @@ def populate_database_with_reddit_comments(username, db_cursor):
 		if len(after):
 			url = url + '&after=' + after
 
-		print url
+		if debug:
+			print url
 
 		f = urllib2.urlopen(url)
 
@@ -95,35 +97,38 @@ def populate_database_with_reddit_comments(username, db_cursor):
 		if not after:
 			break
 
-def populate_database_with_tweets(username, db_cursor):
+def populate_database_with_tweets(username, db_cursor, debug):
 
-	print 'Getting tweets...'
+	if debug:
+		print 'Getting tweets...'
 
 	url = '?rpp=100&q=from%3A' + username
 
 	while True:
 
 		feed = 'http://search.twitter.com/search.json' + url
-
 		f = urllib2.urlopen(feed)
-
 		comments = simplejson.loads(f.read())
 
-		try:
+		if comments.has_key('results'):
+
 			for comment in comments['results']:
 				db_cursor.execute('INSERT INTO comments VALUES (NULL, ?)', [comment['text']])
 
-			try:
+			if comments.has_key('next_page'):
+
 				url = comments['next_page']
 
-				print url
-			except:
+				if debug:
+					print url
+
+			else:
 				url = False
 
 			if not url:
 				break
-		except:
-			pass
+		else:
+			break
 
 def create_semantic_data_tables(db_cursor):
 
@@ -162,24 +167,27 @@ def main():
 
 	try:
 
-		username, calais_api_key, services = get_command_line_arguments()
+		username, calais_api_key, services, debug = get_command_line_arguments()
 
 		db_filename = 'usermine-' + username + '.db'
 
+		# if database file already exists, we're in updating mode
 		updating = os.path.isfile(db_filename)
 
+		# create/open database
 		connection = sqlite3.connect(db_filename)
 		cursor = connection.cursor()
 
+		# initial population of database
 		if not updating:
 
 			cursor.execute('CREATE TABLE comments (id INTEGER PRIMARY KEY, comment TEXT)')
 
 			if services['reddit']:
-				populate_database_with_reddit_comments(username, cursor)
+				populate_database_with_reddit_comments(username, cursor, debug)
 
 			if services['twitter']:
-				populate_database_with_tweets(username, cursor)
+				populate_database_with_tweets(username, cursor, debug)
 
 			create_semantic_data_tables(cursor)
 			populate_database_with_semantic_data_from_comments(calais_api_key, cursor)
