@@ -16,8 +16,6 @@ document usage in readme
 
 add option to output as human readable
 
-add extraction of URLs
-
 add GPL license
 """
 
@@ -164,8 +162,20 @@ def populate_database_with_semantic_data_from_comments(calais_api_key, db_cursor
 
 def summarize_data(db_cursor):
 
+	topic_count  = {}
 	entity_count = {}
-	url_count = {}
+	url_count    = {}
+
+	db_cursor.execute("SELECT topic FROM topics")
+
+	for topic_data in db_cursor.fetchall():
+
+		topic_name = topic_data[0]
+
+		if topic_count.has_key(topic_name):
+			topic_count[topic_name] = topic_count[topic_name] + 1
+		else:
+			topic_count[topic_name] = 1
 
 	db_cursor.execute("SELECT entity FROM entities")
 
@@ -186,6 +196,7 @@ def summarize_data(db_cursor):
 				entity_count[entity_name] = 1
 
 	summary = {}
+	summary['topics'] = sorted(topic_count.iteritems(), key=itemgetter(1), reverse=True)
 	summary['entities'] = sorted(entity_count.iteritems(), key=itemgetter(1), reverse=True)
 	summary['urls'] = sorted(url_count.iteritems(), key=itemgetter(1), reverse=True)
 
@@ -194,7 +205,6 @@ def summarize_data(db_cursor):
 def main():
 
 	try:
-
 		username, calais_api_key, services, debug = get_command_line_arguments()
 
 		db_filename = 'usermine-' + username + '.db'
@@ -224,9 +234,6 @@ def main():
 
 		# summarize data
 		print simplejson.dumps(summarize_data(cursor))
-		#for entity_data in  sorted(entity_count.iteritems(), key=itemgetter(1), reverse=True):
-		#  entity_name = entity_data[0]
-		#  print entity_name + ':' + str(entity_count[entity_name])
 	except:
 		print sys.exc_info()[0]
 
