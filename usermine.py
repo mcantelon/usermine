@@ -14,6 +14,8 @@ change logic:
 
 document usage in readme
 
+get rid of exception display when showing command line arg error (or don't use exit)
+
 add GPL license
 """
 
@@ -87,7 +89,7 @@ def populate_database_with_reddit_comments(username, db_cursor, debug):
 		comments = simplejson.loads(f.read())
 
 		for comment in comments['data']['children']:
-			db_cursor.execute('INSERT INTO comments VALUES (NULL, ?)', [comment['data']['body']])
+			db_cursor.execute('INSERT INTO comments (id, comment, updated) VALUES (NULL, ?, ?)', [comment['data']['body'], 0])
 
 		after = comments['data']['after']
 
@@ -110,7 +112,7 @@ def populate_database_with_tweets(username, db_cursor, debug):
 		if comments.has_key('results'):
 
 			for comment in comments['results']:
-				db_cursor.execute('INSERT INTO comments VALUES (NULL, ?)', [comment['text']])
+				db_cursor.execute('INSERT INTO comments (id, comment, updated) VALUES (NULL, ?, ?)', [comment['text'], 0])
 
 			if comments.has_key('next_page'):
 
@@ -129,18 +131,19 @@ def populate_database_with_tweets(username, db_cursor, debug):
 
 def create_semantic_data_tables(db_cursor):
 
-	db_cursor.execute('CREATE TABLE topics (id INTEGER PRIMARY KEY, topic TEXT)')
-	db_cursor.execute('CREATE TABLE entities (id INTEGER PRIMARY KEY, entity TEXT)')
+	db_cursor.execute('CREATE TABLE IF NOT EXISTS topics (id INTEGER PRIMARY KEY, topic TEXT)')
+	db_cursor.execute('CREATE TABLE IF NOT EXISTS entities (id INTEGER PRIMARY KEY, entity TEXT)')
 
 def populate_database_with_semantic_data_from_comments(calais_api_key, db_cursor, debug):
 
 	calais = Calais(calais_api_key, submitter='usermine')
 
-	db_cursor.execute('SELECT comment FROM comments')
+	db_cursor.execute('SELECT id, comment FROM comments WHERE updated = 0')
 
 	for comment_data in db_cursor.fetchall():
 
-		comment = comment_data[0]
+		id = comment_data[0]
+		comment = comment_data[1]
 
 		try:
 			result = calais.analyze(comment)
@@ -148,15 +151,17 @@ def populate_database_with_semantic_data_from_comments(calais_api_key, db_cursor
 			if hasattr(result, 'entities'):
 				for entity in result.entities:
 					entity_name = entity['name']
-					db_cursor.execute('INSERT INTO entities VALUES (NULL, ?)', [entity_name])
+					db_cursor.execute('INSERT INTO entities (id, entity) VALUES (NULL, ?)', [entity_name])
 
 			if hasattr(result, 'topics'):
 				for topic in result.topics:
 					topic_name = topic['categoryName']
-					db_cursor.execute('INSERT INTO topics VALUES (NULL, ?)', [topic_name])
+					db_cursor.execute('INSERT INTO topics (id, topic) VALUES (NULL, ?)', [topic_name])
 		except:
 			if debug:
 				print sys.exc_info()
+
+		db_cursor.execute('UPDATE comments SET updated=1 WHERE id = ?', [id])
 
 		if debug:
 			print '.'
@@ -210,11 +215,9 @@ def main():
 		connection = sqlite3.connect(db_filename)
 		cursor = connection.cursor()
 
-		# initial population of database
-		if not updating:
+		cursor.execute('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY, comment TEXT, updated BOOLEAN)')
 
-			cursor.execute('CREATE TABLE comments (id INTEGER PRIMARY KEY, comment TEXT)')
-
+		if 1:
 			if services['reddit']:
 				populate_database_with_reddit_comments(username, cursor, debug)
 
