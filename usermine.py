@@ -14,8 +14,6 @@ change logic:
 
 document usage in readme
 
-add option to output as human readable
-
 add GPL license
 """
 
@@ -42,6 +40,9 @@ def get_command_line_arguments():
 	parser.add_option('-t', action='store_true', dest='twitter', default=False,
 	  help='fetch comments from Twitter')
 
+	parser.add_option('-o', action='store_true', dest='human_readable', default=False,
+	  help='display output as human-readable text instead of JSON')
+
 	(options, args) = parser.parse_args(sys.argv)
 
 	if options.user == None:
@@ -56,7 +57,7 @@ def get_command_line_arguments():
 	services['reddit'] =  options.reddit
 	services['twitter'] = options.twitter
 
-	return options.user, options.api_key, services, options.debug
+	return options.user, options.api_key, services, options.debug, options.human_readable
 
 def command_line_error_then_die(parser, error_message):
 	print 'ERROR: ' + error_message
@@ -183,7 +184,7 @@ def summarize_data(db_cursor):
 			increment_dictionary_counter(entity_count, entity_name)
 
 	return {
-		'topic': reverse_sort_dictionary_by_values(topic_count),
+		'topics': reverse_sort_dictionary_by_values(topic_count),
 		'entities': reverse_sort_dictionary_by_values(entity_count),
 		'urls': reverse_sort_dictionary_by_values(url_count)
 	}
@@ -198,7 +199,7 @@ def reverse_sort_dictionary_by_values(hash):
 def main():
 
 	try:
-		username, calais_api_key, services, debug = get_command_line_arguments()
+		username, calais_api_key, services, debug, human_readable = get_command_line_arguments()
 
 		db_filename = 'usermine-' + username + '.db'
 
@@ -226,7 +227,15 @@ def main():
 			connection.commit()
 
 		# summarize data
-		print simplejson.dumps(summarize_data(cursor))
+		if human_readable:
+			summary = summarize_data(cursor)
+			for data_type in summary:
+				print data_type.title() + ':'
+				for count in summary[data_type]:
+					print '    ' + count[0] + ' (' + str(count[1]) + ')'
+				print
+		else:
+			print simplejson.dumps(summarize_data(cursor))
 	except:
 		print sys.exc_info()[0]
 
