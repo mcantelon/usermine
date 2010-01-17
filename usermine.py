@@ -169,13 +169,7 @@ def summarize_data(db_cursor):
 	db_cursor.execute("SELECT topic FROM topics")
 
 	for topic_data in db_cursor.fetchall():
-
-		topic_name = topic_data[0]
-
-		if topic_count.has_key(topic_name):
-			topic_count[topic_name] = topic_count[topic_name] + 1
-		else:
-			topic_count[topic_name] = 1
+		increment_dictionary_counter(topic_count, topic_data[0])
 
 	db_cursor.execute("SELECT entity FROM entities")
 
@@ -184,23 +178,22 @@ def summarize_data(db_cursor):
 		entity_name = entity_data[0]
 
 		if entity_name.find('http://') == 0:
-
-			if url_count.has_key(entity_name):
-				url_count[entity_name] = url_count[entity_name] + 1
-			else:
-				url_count[entity_name] = 1
+			increment_dictionary_counter(url_count, entity_name)
 		else:
-			if entity_count.has_key(entity_name):
-				entity_count[entity_name] = entity_count[entity_name] + 1
-			else:
-				entity_count[entity_name] = 1
+			increment_dictionary_counter(entity_count, entity_name)
 
-	summary = {}
-	summary['topics'] = sorted(topic_count.iteritems(), key=itemgetter(1), reverse=True)
-	summary['entities'] = sorted(entity_count.iteritems(), key=itemgetter(1), reverse=True)
-	summary['urls'] = sorted(url_count.iteritems(), key=itemgetter(1), reverse=True)
+	return {
+		'topic': reverse_sort_dictionary_by_values(topic_count),
+		'entities': reverse_sort_dictionary_by_values(entity_count),
+		'urls': reverse_sort_dictionary_by_values(url_count)
+	}
 
-	return summary
+def increment_dictionary_counter(dictionary, key):
+	dictionary.setdefault(key, 0)
+	dictionary[key] += 1
+
+def reverse_sort_dictionary_by_values(hash):
+	return sorted(hash.iteritems(), key=itemgetter(1), reverse=True)
 
 def main():
 
