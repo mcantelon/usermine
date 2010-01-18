@@ -4,11 +4,18 @@ About
 usermine.py analyzes a user, returning a summary of what they've commented
 on and URLs contained in their comments.
 
-It works by:
+Analysis of comment text is done via the OpenCalais web service.
 
-1) Downloading the user's comment history from one or more services
-2) Going through the comments and submitting them to the Calais web service
-3) Summarizing the semantic data returned by Calais
+usermine.py works by:
+
+1) Downloading the user's comment history from Reddit and/or Twitter
+
+2) Going through the comments and, if the comment hasn't already been
+   analyzed during a previous run, submitting the comment to the Calais web
+   service
+
+3) Summarizing the semantic data returned by Calais in either JSON or
+   human-readable text.
 
 Results are stored in a database file.
 
@@ -22,16 +29,27 @@ The script requires python-calais, which can be found at:
 Examples
 --------
 
-Analyze Reddit comment history of user "mcantelon":
+Analyze Reddit comment history of user "mcantelon" and display as JSON:
 
   usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx -r
 
-Analyze Twitter status updates of user "mcantelon":
+Analyze Twitter status updates of user "mcantelon" and display as human-
+readable text:
 
-  usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx -t
+  usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx -t -o
+
+Analyze Twitter status updates of user "mcantelon" and display as human-
+readable text in debug mode:
+
+  usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx -t -o -d
+
+Notes
+-----
 
 The Twitter status update fetching uses the search API which, unfortunately,
 only retains the last week or so of Tweets.
+
+You may want to run usermine.py in debug mode until you get your options right.
 
 Usage
 -----
