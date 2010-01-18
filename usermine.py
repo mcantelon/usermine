@@ -11,8 +11,6 @@ from optparse import OptionParser
 To-do:
   *document usage in readme
   *add GPL license
-  *add arg for db name/location (will allow multi-user analysis)
-  *return args as a hash cuz it's getting unwieldy
 """
 
 def get_command_line_arguments():
@@ -28,6 +26,9 @@ def get_command_line_arguments():
 
 	parser.add_option('-a', '--api_key', action='store', type='string', dest='api_key',
 	  help='specify OpenCalais API key')
+
+	parser.add_option('-f', '--file', action='store', type='string', dest='file', default=None,
+	  help='specify database file (default is "usermine-<username>.db")')
 
 	parser.add_option('-d', action='store_true', dest='debug', default=False,
 	  help='display debug information during processing')
@@ -58,6 +59,7 @@ def get_command_line_arguments():
 	return {
 		'user': options.user,
 		'api_key': options.api_key,
+		'file': options.file,
 		'services': services,
 		'debug': options.debug,
 		'human_readable': options.human_readable
@@ -216,11 +218,13 @@ def main():
 
 		username = options['user']
 		calais_api_key = options['api_key']
+		db_filename = options['file']
 		services = options['services']
 		debug = options['debug']
 		human_readable = options['human_readable']
 
-		db_filename = 'usermine-' + username + '.db'
+		if db_filename == None:
+			db_filename = 'usermine-' + username + '.db'
 
 		# create/open database
 		connection = sqlite3.connect(db_filename)
