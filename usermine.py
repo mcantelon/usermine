@@ -89,7 +89,10 @@ def populate_database_with_reddit_comments(username, db_cursor, debug):
 		comments = simplejson.loads(f.read())
 
 		for comment in comments['data']['children']:
-			db_cursor.execute('INSERT INTO comments (id, comment, updated) VALUES (NULL, ?, ?)', [comment['data']['body'], 0])
+			db_cursor.execute('SELECT id FROM comments WHERE api_id = ?', [comment['data']['id']])
+
+			if db_cursor.fetchone() == None:
+				db_cursor.execute('INSERT INTO comments (id, comment, updated, api_id) VALUES (NULL, ?, ?, ?)', [comment['data']['body'], 0, comment['data']['id']])
 
 		after = comments['data']['after']
 
@@ -112,7 +115,10 @@ def populate_database_with_tweets(username, db_cursor, debug):
 		if comments.has_key('results'):
 
 			for comment in comments['results']:
-				db_cursor.execute('INSERT INTO comments (id, comment, updated) VALUES (NULL, ?, ?)', [comment['text'], 0])
+				db_cursor.execute('SELECT id FROM comments WHERE api_id = ?', [comment['id']])
+
+				if db_cursor.fetchone() == None:
+					db_cursor.execute('INSERT INTO comments (id, comment, updated, api_id) VALUES (NULL, ?, ?, ?)', [comment['text'], 0, comment['id']])
 
 			if comments.has_key('next_page'):
 
@@ -215,7 +221,7 @@ def main():
 		connection = sqlite3.connect(db_filename)
 		cursor = connection.cursor()
 
-		cursor.execute('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY, comment TEXT, updated BOOLEAN)')
+		cursor.execute('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY, comment TEXT, api_id VARCHAR(255), updated BOOLEAN)')
 
 		if 1:
 			if services['reddit']:
