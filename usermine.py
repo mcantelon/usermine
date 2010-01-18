@@ -5,18 +5,10 @@ from operator import itemgetter
 from optparse import OptionParser
 
 """
-change logic:
-  on update:
-    pull comments
-    add new comments to db
-
-  add to semantic logic to only scan new comments, marking comment read after scan
-
-document usage in readme
-
-get rid of exception display when showing command line arg error (or don't use exit)
-
-add GPL license
+To-do:
+  *document usage in readme
+  *add GPL license
+  *add arg for db name (will allow multi-user analysis))
 """
 
 def get_command_line_arguments():
@@ -214,26 +206,22 @@ def main():
 
 		db_filename = 'usermine-' + username + '.db'
 
-		# if database file already exists, we're in updating mode
-		updating = os.path.isfile(db_filename)
-
 		# create/open database
 		connection = sqlite3.connect(db_filename)
 		cursor = connection.cursor()
 
 		cursor.execute('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY, comment TEXT, api_id VARCHAR(255), updated BOOLEAN)')
 
-		if 1:
-			if services['reddit']:
-				populate_database_with_reddit_comments(username, cursor, debug)
+		if services['reddit']:
+			populate_database_with_reddit_comments(username, cursor, debug)
 
-			if services['twitter']:
-				populate_database_with_tweets(username, cursor, debug)
+		if services['twitter']:
+			populate_database_with_tweets(username, cursor, debug)
 
-			create_semantic_data_tables(cursor)
-			populate_database_with_semantic_data_from_comments(calais_api_key, cursor, debug)
+		create_semantic_data_tables(cursor)
+		populate_database_with_semantic_data_from_comments(calais_api_key, cursor, debug)
 
-			connection.commit()
+		connection.commit()
 
 		# summarize data
 		if human_readable:
@@ -245,6 +233,9 @@ def main():
 				print
 		else:
 			print simplejson.dumps(summarize_data(cursor))
+	except SystemExit:
+		pass
+
 	except:
 		print sys.exc_info()[0]
 
