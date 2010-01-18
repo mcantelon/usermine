@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-import sqlite3, urllib2, simplejson, sys, os.path
+import sqlite3
+import urllib2
+import simplejson
+import sys
 from calais import Calais
 from operator import itemgetter
 from optparse import OptionParser
@@ -8,7 +11,8 @@ from optparse import OptionParser
 To-do:
   *document usage in readme
   *add GPL license
-  *add arg for db name (will allow multi-user analysis))
+  *add arg for db name/location (will allow multi-user analysis)
+  *return args as a hash cuz it's getting unwieldy
 """
 
 def get_command_line_arguments():
