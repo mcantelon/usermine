@@ -19,12 +19,33 @@ The script requires python-calais, which can be found at:
 
   http://code.google.com/p/python-calais
 
-Example
--------
+Examples
+--------
 
-usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx
+Analyze Reddit comment history of user "mcantelon":
 
-Legal
+  usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx -r
+
+Analyze Twitter status updates of user "mcantelon":
+
+  usermine.py -u mcantelon -a abcdefghijklmnopqrstuvwx -t
+
+The Twitter status update fetching uses the search API which, unfortunately,
+only retains the last week or so of Tweets.
+
+Usage
 -----
 
-By Mike Cantelon, licensed under GPL
+Usage: usermine.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -u USER, --user=USER  specify username to investigate
+  -a API_KEY, --api_key=API_KEY
+                        specify OpenCalais API key
+  -f FILE, --file=FILE  specify database file (default is
+                        "usermine-<username>.db")
+  -d                    display debug information during processing
+  -r                    fetch comments from Reddit
+  -t                    fetch comments from Twitter
+  -o                    display output as human-readable text instead of JSON

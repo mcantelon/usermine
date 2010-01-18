@@ -36,7 +36,7 @@ def get_command_line_arguments():
 	parser = OptionParser()
 
 	parser.add_option('-u', '--user', action='store', type='string', dest='user',
-	  help='specify Reddit username to investigate')
+	  help='specify username to investigate')
 
 	parser.add_option('-a', '--api_key', action='store', type='string', dest='api_key',
 	  help='specify OpenCalais API key')
