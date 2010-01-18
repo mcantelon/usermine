@@ -26,6 +26,10 @@ The script requires python-calais, which can be found at:
 
   http://code.google.com/p/python-calais
 
+You'll need an Open Calais API key, which you can request here:
+
+  http://www.opencalais.com/APIkey
+
 Examples
 --------
 
