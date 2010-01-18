@@ -55,7 +55,13 @@ def get_command_line_arguments():
 	services['reddit'] =  options.reddit
 	services['twitter'] = options.twitter
 
-	return options.user, options.api_key, services, options.debug, options.human_readable
+	return {
+		'user': options.user,
+		'api_key': options.api_key,
+		'services': services,
+		'debug': options.debug,
+		'human_readable': options.human_readable
+	}
 
 def command_line_error_then_die(parser, error_message):
 	print 'ERROR: ' + error_message
@@ -206,7 +212,13 @@ def reverse_sort_dictionary_by_values(hash):
 def main():
 
 	try:
-		username, calais_api_key, services, debug, human_readable = get_command_line_arguments()
+		options = get_command_line_arguments()
+
+		username = options['user']
+		calais_api_key = options['api_key']
+		services = options['services']
+		debug = options['debug']
+		human_readable = options['human_readable']
 
 		db_filename = 'usermine-' + username + '.db'
 
